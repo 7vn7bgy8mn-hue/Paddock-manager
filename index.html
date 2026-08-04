@@ -245,6 +245,21 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 .rv-panel-left{left:10px;width:230px;}
 .rv-panel-right{right:10px;width:220px;display:flex;flex-direction:column;gap:8px;}
 
+.rv-track-labels{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;}
+.car-tag{position:absolute;transform:translate(-50%,-135%);display:flex;align-items:center;gap:6px;
+  background:rgba(15,18,22,.85);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px;
+  font-family:var(--font-m);font-size:10px;color:#f2f4f7;white-space:nowrap;backdrop-filter:blur(3px);}
+.car-tag .pos-chip{background:#f2f4f7;color:#111;border-radius:3px;padding:1px 5px;font-weight:700;min-width:12px;text-align:center;}
+.car-tag .tag-tire{color:#cfd6de;}
+.car-tag .tag-tire.soft{color:#ff6b6b;}
+.car-tag .tag-tire.medium{color:#ffd166;}
+.car-tag .tag-tire.hard{color:#e9eaef;}
+.car-tag .tag-tire.wet{color:#5cb6ff;}
+.car-tag .tag-status{color:#8b95a1;font-size:9px;text-transform:uppercase;letter-spacing:.05em;}
+.car-marker{position:absolute;width:19px;height:19px;border-radius:50%;transform:translate(-50%,-50%);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-m);font-weight:700;font-size:10px;
+  color:#fff;border:2px solid rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.4);}
+
 .race-col-label{font-family:var(--font-m);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8b95a1;margin-bottom:6px;
   background:rgba(15,18,22,.72);display:inline-block;padding:3px 8px;border-radius:5px;}
 
@@ -650,6 +665,7 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
   <div id="screen-race" class="screen hidden">
     <div class="race-viewport">
       <canvas id="race-canvas" width="600" height="340"></canvas>
+      <div class="rv-track-labels" id="race-track-labels"></div>
 
       <div class="rv-topbar">
         <div class="rv-icons">
@@ -854,25 +870,27 @@ function buildTrackPath(points){
 
 /* ---- circuit 3D (Three.js) : ville procédurale + ruban de piste ---- */
 
-const trackScenes = new Map(); // canvas -> {renderer,scene,camera,carGroup,carMeshes[],seed}
+const trackScenes = new Map(); // canvas -> {renderer,scene,camera,carGroup,carMeshesById,seed,follow,camFocus,camOffset}
 const W2 = (x)=>x-300; // trackspace -> monde (X)
 const W3 = (y)=>y-170; // trackspace -> monde (Z)
 
 function ensureTrackScene(canvas){
   let ts = trackScenes.get(canvas);
   if(!ts){
+    const follow = canvas.id==="race-canvas";
     const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
     renderer.setSize(600,340,false);
     renderer.setClearColor(0x1c2430,1);
     const scene = new THREE.Scene();
-    const aspect = 600/340, vs = 205;
+    const aspect = 600/340, vs = follow?125:205;
     const camera = new THREE.OrthographicCamera(-vs*aspect, vs*aspect, vs, -vs, 0.1, 3000);
-    camera.position.set(-40, 330, 260);
+    const camOffset = {x:-40, y:330, z:250};
+    camera.position.set(camOffset.x, camOffset.y, camOffset.z+10);
     camera.lookAt(0,0,10);
     const carGroup = new THREE.Group();
     scene.add(carGroup);
-    ts = {renderer, scene, camera, carGroup, carMeshes:[], seed:null};
+    ts = {renderer, scene, camera, carGroup, carMeshesById:{}, seed:null, follow, camOffset, camFocus:{x:0,z:0}};
     trackScenes.set(canvas, ts);
   }
   return ts;
@@ -1010,14 +1028,18 @@ function renderTrackFrame(canvas, trackData, cars){
   if(ts.seed !== trackData.seed){
     buildStaticTrackScene(ts, trackData);
     ts.seed = trackData.seed;
+    Object.values(ts.carMeshesById).forEach(m=>ts.carGroup.remove(m));
+    ts.carMeshesById = {};
   }
-  if(ts.carMeshes.length !== cars.length){
-    ts.carMeshes.forEach(m=>ts.carGroup.remove(m));
-    ts.carMeshes = cars.map(()=>{ const m=makeCarMesh(); ts.carGroup.add(m); return m; });
-  }
+  const liveKeys = new Set(cars.map((c,i)=>c.id!==undefined?c.id:i));
+  Object.keys(ts.carMeshesById).forEach(k=>{
+    if(!liveKeys.has(k)){ ts.carGroup.remove(ts.carMeshesById[k]); delete ts.carMeshesById[k]; }
+  });
   const points = trackData.points;
   cars.forEach((c,i)=>{
-    const m = ts.carMeshes[i];
+    const key = c.id!==undefined?c.id:i;
+    let m = ts.carMeshesById[key];
+    if(!m){ m = makeCarMesh(); ts.carGroup.add(m); ts.carMeshesById[key]=m; }
     const pt = trackPointAt(c.progress, points);
     const tan = tangentAt(c.progress, points);
     m.position.set(W2(pt.x), 0, W3(pt.y));
@@ -1030,7 +1052,59 @@ function renderTrackFrame(canvas, trackData, cars){
     m.userData.body.material.transparent = !!c.dnf;
     m.userData.ring.visible = !!c.isPlayer;
   });
+
+  if(ts.follow && cars.length){
+    let fx=0, fz=0, n=0;
+    cars.forEach(c=>{
+      if(c.dnf) return;
+      if(c.rank===undefined || c.rank<=2){
+        const pt = trackPointAt(c.progress, points);
+        fx += W2(pt.x); fz += W3(pt.y); n++;
+      }
+    });
+    if(n>0){ fx/=n; fz/=n; }
+    const s = 0.10;
+    ts.camFocus.x += (fx-ts.camFocus.x)*s;
+    ts.camFocus.z += (fz-ts.camFocus.z)*s;
+    ts.camera.position.set(ts.camFocus.x+ts.camOffset.x, ts.camOffset.y, ts.camFocus.z+ts.camOffset.z);
+    ts.camera.lookAt(ts.camFocus.x, 0, ts.camFocus.z+10);
+  }
+
   ts.renderer.render(ts.scene, ts.camera);
+}
+
+function projectCarLabels(canvas, cars, viewportEl){
+  const ts = trackScenes.get(canvas);
+  const wrap = document.getElementById("race-track-labels");
+  if(!ts || !wrap) return;
+  const cRect = canvas.getBoundingClientRect();
+  const vRect = viewportEl.getBoundingClientRect();
+  if(cRect.width===0){ wrap.innerHTML=""; return; }
+  const vec = new THREE.Vector3();
+  let html = "";
+  cars.forEach(c=>{
+    if(c.dnf) return;
+    const m = ts.carMeshesById[c.id!==undefined?c.id:cars.indexOf(c)];
+    if(!m) return;
+    m.getWorldPosition(vec);
+    vec.y += 5;
+    vec.project(ts.camera);
+    if(vec.z>1) return;
+    const x = (vec.x*0.5+0.5)*cRect.width + (cRect.left-vRect.left);
+    const y = (-vec.y*0.5+0.5)*cRect.height + (cRect.top-vRect.top);
+    if(x<-30||x>vRect.width+30||y<-30||y>vRect.height+30) return;
+    const rank = c.rank||"?";
+    if(rank<=2){
+      html += `<div class="car-tag" style="left:${x}px;top:${y}px;">
+        <span class="pos-chip">${rank}</span><span>${c.shortName||""}</span>
+        <span class="tag-tire ${c.tireClass||''}">${c.tirePct!==undefined?c.tirePct+'%':''}</span>
+        <span class="tag-status">${c.status||''}</span>
+      </div>`;
+    } else {
+      html += `<div class="car-marker" style="left:${x}px;top:${y}px;background:${c.color};">${rank}</div>`;
+    }
+  });
+  wrap.innerHTML = html;
 }
 
 function tween(fromMap, toMap, duration, onFrame, onDone){
@@ -1859,14 +1933,37 @@ function computeVisualTarget(id){
   return raceState.lap - lapsBehind;
 }
 
+function shortDriverName(id){
+  const n = driverName(id);
+  const parts = n.split(" ");
+  return parts[parts.length-1];
+}
+
 function renderRaceCanvas(){
+  const ranked = orderedDriverIds();
+  const rankOf = {};
+  ranked.forEach((id,i)=>rankOf[id]=i+1);
   const cars = Object.keys(raceState.drivers).map(id=>{
     const rd = raceState.drivers[id];
     const team = teamOf(id);
-    return { progress: rd.vProgress, color: team.color, isPlayer: team.id===state.playerTeamId, dnf: rd.dnf };
+    const remain = clamp(100-Math.round(rd.tireWear),0,100);
+    return {
+      id, progress: rd.vProgress, color: team.color, isPlayer: team.id===state.playerTeamId, dnf: rd.dnf,
+      rank: rankOf[id], shortName: shortDriverName(id),
+      tireClass: rd.tire, tirePct: remain,
+      status: rd.dnf ? "ABANDON" : (raceState.lap===0 ? "OUT LAP" : "EN PISTE"),
+    };
   });
-  renderTrackFrame(document.getElementById("race-canvas"), raceState.trackData, cars);
+  const canvas = document.getElementById("race-canvas");
+  renderTrackFrame(canvas, raceState.trackData, cars);
+  const viewport = document.querySelector(".race-viewport");
+  if(viewport) projectCarLabels(canvas, cars, viewport);
 }
+
+window.addEventListener("resize", ()=>{
+  const screen = document.getElementById("screen-race");
+  if(raceState && screen && !screen.classList.contains("hidden")) renderRaceCanvas();
+});
 
 function renderLeaderboard(){
   const ids = orderedDriverIds();
