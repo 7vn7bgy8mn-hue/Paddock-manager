@@ -39,8 +39,23 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 button{font-family:var(--font-b);cursor:pointer;}
+input{font-family:var(--font-b);}
 .hidden{display:none !important;}
 #app{max-width:920px;margin:0 auto;padding:18px 16px 60px;}
+
+/* ---------- rotate overlay (jeu en paysage uniquement) ---------- */
+#rotate-overlay{
+  display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;
+  flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;
+}
+#rotate-overlay .icon{font-size:42px;margin-bottom:16px;animation:rotateHint 1.8s ease-in-out infinite;}
+#rotate-overlay .msg{font-family:var(--font-d);font-weight:700;font-size:20px;margin-bottom:8px;}
+#rotate-overlay .sub{color:var(--text-dim);font-size:13px;max-width:280px;}
+@keyframes rotateHint{ 0%,100%{transform:rotate(0deg);} 50%{transform:rotate(-90deg);} }
+@media (orientation:portrait) and (max-width:900px){
+  #rotate-overlay{display:flex;}
+  #app{display:none;}
+}
 
 /* ---------- shared bits ---------- */
 .eyebrow{
@@ -87,21 +102,35 @@ h2.section-title{font-family:var(--font-d);font-weight:700;font-size:20px;letter
 .menu-strip{margin:34px 0;height:2px;width:120px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
 .menu-copy{color:var(--text-dim);max-width:440px;font-size:14px;line-height:1.6;margin-bottom:30px;}
 
-/* ---------- team select ---------- */
-.team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-@media(max-width:520px){.team-grid{grid-template-columns:1fr;}}
-.team-card{
-  background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;
-  text-align:left;color:var(--text);position:relative;overflow:hidden;
+/* ---------- team create ---------- */
+.create-form{max-width:440px;margin:0 auto;text-align:left;}
+.field-label{font-family:var(--font-m);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);margin:18px 0 8px;}
+.field-label:first-child{margin-top:0;}
+#team-name-input{
+  width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg-card);
+  color:var(--text);font-size:16px;font-family:var(--font-d);font-weight:600;
 }
-.team-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tc,#888);}
-.team-card:hover{border-color:var(--text-dim);}
-.team-card.selected{border-color:var(--tc,#fff);box-shadow:0 0 0 1px var(--tc,#fff) inset;}
-.team-name{font-family:var(--font-d);font-weight:700;font-size:17px;}
-.team-country{color:var(--text-faint);font-size:11px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
-.team-stats-mini{display:flex;gap:12px;margin-top:8px;font-family:var(--font-m);font-size:11px;color:var(--text-dim);}
-.driver-mini{font-size:12px;color:var(--text-dim);margin-top:2px;}
-.team-select-footer{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 30%);padding:18px 0 4px;margin-top:8px;}
+#team-name-input:focus{outline:none;border-color:var(--text-dim);}
+.color-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.color-swatch-btn{width:38px;height:38px;border-radius:50%;border:3px solid transparent;padding:0;}
+.color-swatch-btn.selected{border-color:#fff;box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--sc,#fff);}
+.create-footer{margin-top:26px;}
+
+/* ---------- market ---------- */
+.budget-bar{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:16px;}
+.budget-bar b{font-family:var(--font-m);font-size:20px;color:var(--amber);}
+.budget-bar .lbl{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-m);}
+.signed-row{display:flex;gap:8px;margin-bottom:16px;}
+.signed-slot{flex:1;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-family:var(--font-m);font-size:12px;color:var(--text-faint);}
+.signed-slot.filled{border-style:solid;border-color:var(--line);background:var(--bg-card);color:var(--text);}
+.signed-slot .sn{font-family:var(--font-d);font-weight:700;font-size:14px;color:var(--text);}
+.market-driver{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
+.market-driver .info{flex:1;}
+.market-driver .nm{font-family:var(--font-d);font-weight:700;font-size:14px;}
+.market-driver .st{font-family:var(--font-m);font-size:10px;color:var(--text-faint);}
+.market-driver .price{font-family:var(--font-m);font-size:13px;color:var(--amber);white-space:nowrap;}
+.market-section-gap{margin-top:22px;}
 
 /* ---------- hub ---------- */
 .hub-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
@@ -187,7 +216,7 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 .driver-control{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
 .driver-control-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .driver-control-head .nm{font-family:var(--font-d);font-weight:700;font-size:15px;}
-.instr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.instr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
 .instr-btn{padding:9px 4px;font-size:11px;border-radius:6px;border:1px solid var(--line);background:var(--bg-raised);color:var(--text-dim);
   font-family:var(--font-d);font-weight:600;letter-spacing:.02em;text-transform:uppercase;}
 .instr-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -202,8 +231,8 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 .split-main{min-width:0;}
 .split-side{min-width:0;}
 
-/* Landscape: piste à gauche en grand, infos/consignes à droite dans une colonne qui défile */
-@media (orientation:landscape) and (min-width:560px){
+/* Landscape: le jeu vise ce mode en priorité */
+@media (orientation:landscape){
   #app{max-width:none;padding:14px 20px 24px;}
   .split-layout{flex-direction:row;align-items:flex-start;gap:20px;}
   .split-main{flex:1 1 58%;position:sticky;top:14px;}
@@ -220,6 +249,13 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 </style>
 </head>
 <body>
+
+<div id="rotate-overlay">
+  <div class="icon">📱</div>
+  <div class="msg">Tourne ton téléphone</div>
+  <div class="sub">PADDOCK se joue en mode paysage pour profiter du circuit et du classement en direct.</div>
+</div>
+
 <div id="app">
 
   <!-- MENU -->
@@ -227,17 +263,49 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
     <div class="logo-mark">PADDOCK</div>
     <div class="logo-sub">Gestion d'écurie · Saison fictive</div>
     <div class="menu-strip"></div>
-    <p class="menu-copy">Choisis une écurie, développe ta voiture entre les manches, et pilote la stratégie de tes deux pilotes course après course sur des circuits dessinés en direct — qualifications, arrêts aux stands et météo changeante inclus.</p>
+    <p class="menu-copy">Crée ta propre écurie, recrute tes deux pilotes et achète tes premières pièces sur le marché, puis dispute 8 Grands Prix contre 10 écuries rivales — circuits dessinés en direct, consignes de course, arrêts aux stands et météo changeante inclus.</p>
     <button class="btn btn-accent" id="btn-start">Nouvelle saison</button>
   </div>
 
-  <!-- TEAM SELECT -->
-  <div id="screen-team-select" class="screen hidden">
-    <div class="eyebrow">Étape 1 / 1</div>
-    <h1 class="title" style="margin-bottom:16px;">Choisis ton écurie</h1>
-    <div class="team-grid" id="team-grid"></div>
-    <div class="team-select-footer">
-      <button class="btn btn-accent" id="btn-confirm-team" disabled style="width:100%;">Confirmer et prendre le volant</button>
+  <!-- TEAM CREATE -->
+  <div id="screen-team-create" class="screen hidden">
+    <div class="eyebrow">Étape 1 / 2</div>
+    <h1 class="title" style="margin-bottom:20px;">Crée ton écurie</h1>
+    <div class="create-form">
+      <div class="field-label">Nom de l'écurie</div>
+      <input type="text" id="team-name-input" maxlength="24" placeholder="Ex. Onyx Motorsport">
+      <div class="field-label">Couleur</div>
+      <div class="color-grid" id="color-grid"></div>
+      <div class="create-footer">
+        <button class="btn btn-accent" id="btn-confirm-create" disabled style="width:100%;">Continuer vers le marché</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKET -->
+  <div id="screen-market" class="screen hidden">
+    <div class="eyebrow">Étape 2 / 2</div>
+    <h1 class="title" style="margin-bottom:16px;">Marché de pré-saison</h1>
+
+    <div class="budget-bar">
+      <div>
+        <div class="lbl">Budget disponible</div>
+        <b id="market-budget">0</b>
+      </div>
+    </div>
+
+    <div class="signed-row" id="signed-row"></div>
+
+    <h2 class="section-title" style="font-size:15px;">Pilotes libres</h2>
+    <div id="market-drivers"></div>
+
+    <div class="market-section-gap">
+      <h2 class="section-title" style="font-size:15px;">Pièces de voiture</h2>
+      <div id="market-parts"></div>
+    </div>
+
+    <div class="create-footer">
+      <button class="btn btn-accent" id="btn-start-season" disabled style="width:100%;">Démarrer la saison</button>
     </div>
   </div>
 
@@ -251,7 +319,7 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
       </div>
       <div class="dev-points">
         <b id="hub-dev-points"></b>
-        <div>Points dev.</div>
+        <div>Budget</div>
       </div>
     </div>
 
@@ -310,31 +378,30 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
   <!-- RACE -->
   <div id="screen-race" class="screen hidden">
     <div class="split-layout">
-      <div class="split-main">
+      <div class="split-side">
         <div class="row between" style="margin-bottom:10px;">
           <div class="eyebrow" id="race-eyebrow" style="margin-bottom:0;">Course</div>
           <div class="lap-counter">Tour <b id="lap-current">0</b> / <span id="lap-total">0</span></div>
         </div>
         <div class="weather-banner" id="weather-banner"></div>
-
+        <h2 class="section-title" style="font-size:15px;">Classement en direct</h2>
+        <div class="leaderboard" id="leaderboard"></div>
+        <h2 class="section-title" style="font-size:15px;">Radio stand</h2>
+        <div class="race-log" id="race-log"></div>
+      </div>
+      <div class="split-main">
         <div class="track-wrap">
           <span class="track-session-tag" id="race-session-tag">En course</span>
           <canvas id="race-canvas" width="600" height="340"></canvas>
         </div>
 
+        <h2 class="section-title" style="font-size:15px;">Consignes écurie</h2>
+        <div id="driver-controls"></div>
+
         <div class="race-actions">
           <button class="btn" id="btn-lap-1" style="flex:1;">Tour suivant</button>
           <button class="btn" id="btn-lap-5" style="flex:1;">+5 tours</button>
         </div>
-      </div>
-      <div class="split-side">
-        <div class="leaderboard" id="leaderboard"></div>
-
-        <h2 class="section-title" style="font-size:15px;">Consignes écurie</h2>
-        <div id="driver-controls"></div>
-
-        <h2 class="section-title" style="font-size:15px;">Radio stand</h2>
-        <div class="race-log" id="race-log"></div>
       </div>
     </div>
   </div>
@@ -364,6 +431,7 @@ function rndi(min,max){return Math.floor(rnd(min,max+1));}
 function pick(arr){return arr[rndi(0,arr.length-1)];}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function makeDriverName(){return pick(FIRST_NAMES)+" "+pick(LAST_NAMES);}
+function uid(){ return (crypto && crypto.randomUUID) ? crypto.randomUUID() : ("d"+Math.random().toString(36).slice(2)); }
 
 const TEAM_TEMPLATES = [
   {name:"Scuderia Rossina",   country:"Italie",     color:"#e0322c", tier:1},
@@ -378,6 +446,8 @@ const TEAM_TEMPLATES = [
   {name:"Ardoise Independent",country:"Irlande",    color:"#9a9da5", tier:3},
 ];
 
+const TEAM_COLOR_PALETTE = ["#e63946","#3a86ff","#06d6a0","#ffbe0b","#8338ec","#fb5607","#00b4d8","#f72585","#43aa8b","#ff9f1c"];
+
 const CIRCUITS = [
   {name:"Circuit de Val Rousse",   country:"Fictif — Sud",   laps:26, speed:"Rapide",  corners:"Peu de virages", tireWear:0.9, rainChance:0.05},
   {name:"Anneau de Portovento",    country:"Fictif — Côte",  laps:30, speed:"Moyenne", corners:"Technique",      tireWear:1.1, rainChance:0.25},
@@ -391,9 +461,8 @@ const CIRCUITS = [
 
 const INSTR = {
   attaque:{label:"Attaque",  pace:3.2, wear:1.45, risk:1.6},
-  rythme: {label:"Rythme",   pace:0,   wear:1.0,  risk:1.0},
-  eco:    {label:"Éco",      pace:-2.4,wear:0.6,  risk:0.7},
-  defends:{label:"Défends",  pace:-1.0,wear:0.9,  risk:0.8},
+  rythme: {label:"Maintien", pace:0,   wear:1.0,  risk:1.0},
+  eco:    {label:"Ralenti",  pace:-2.4,wear:0.6,  risk:0.7},
 };
 const TIRES = {
   soft:  {label:"Tendre", short:"S", grip:5,  wearBase:1.6},
@@ -403,6 +472,7 @@ const TIRES = {
 };
 const POINTS_TABLE = [25,18,15,12,10,8,6,4,2,1];
 const BASE_LAP = 100;
+const START_BUDGET = 520;
 
 /* ============================= TRACK GEOMETRY ============================= */
 
@@ -414,7 +484,7 @@ function seededRandom(seed){
 
 function generateTrackPoints(seed){
   const rand = seededRandom(seed*97+13);
-  const n = 9 + Math.floor(rand()*4); // 9..12 anchor points
+  const n = 9 + Math.floor(rand()*4);
   const cx=300, cy=170, rx=250, ry=138;
   const pts=[];
   for(let i=0;i<n;i++){
@@ -468,14 +538,12 @@ function buildTrackPath(points){
 
 function drawTrack(ctx, points, path){
   ctx.clearRect(0,0,600,340);
-  // background
   const g = ctx.createRadialGradient(300,170,40,300,170,340);
   g.addColorStop(0,"#14161c");
   g.addColorStop(1,"#0a0b0e");
   ctx.fillStyle=g;
   ctx.fillRect(0,0,600,340);
 
-  // road curb (outer)
   ctx.lineJoin="round"; ctx.lineCap="round";
   ctx.strokeStyle="#e0322c";
   ctx.lineWidth=30;
@@ -485,31 +553,26 @@ function drawTrack(ctx, points, path){
   ctx.setLineDash([]);
   ctx.globalAlpha=1;
 
-  // road surface
   ctx.strokeStyle="#33353f";
   ctx.lineWidth=24;
   ctx.stroke(path);
 
-  // inner shading
   ctx.strokeStyle="#26272f";
   ctx.lineWidth=18;
   ctx.stroke(path);
 
-  // centerline
   ctx.strokeStyle="rgba(255,255,255,0.18)";
   ctx.lineWidth=1.4;
   ctx.setLineDash([7,9]);
   ctx.stroke(path);
   ctx.setLineDash([]);
 
-  // start / finish line
   const p0 = trackPointAt(0, points);
   const tan = tangentAt(0, points);
-  const perp = {x:-tan.y, y:tan.x};
   ctx.save();
   ctx.translate(p0.x,p0.y);
   ctx.rotate(Math.atan2(tan.y,tan.x));
-  const w=22,h=6;
+  const h=6;
   for(let i=-3;i<3;i++){
     ctx.fillStyle = i%2===0? "#e9eaef":"#14161c";
     ctx.fillRect(-2, i*h - h*3, 4, h);
@@ -562,12 +625,13 @@ let CALENDAR = [];
 let state = {
   playerTeamId:null,
   raceIndex:0,
-  devPoints:60,
+  devPoints:0,
   driverStandings:{},
   constructorStandings:{},
+  marketDrivers:[],
 };
 let raceState = null;
-let selectedTeamId = null;
+let teamDraft = { name:"", color:null };
 
 function initTeams(){
   TEAMS = TEAM_TEMPLATES.map((t,i)=>{
@@ -578,7 +642,7 @@ function initTeams(){
       reliability: clamp(70+ (t.tier===1?-4:6) +rndi(-5,5),40,96),
     };
     const drivers = [0,1].map(()=>({
-      id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : ("d"+Math.random().toString(36).slice(2)),
+      id: uid(),
       name:makeDriverName(),
       pace: clamp(55+tierBonus+rndi(-6,8),35,96),
       consistency: clamp(60+rndi(-10,15),35,95),
@@ -588,10 +652,26 @@ function initTeams(){
     return { id:"team-"+i, name:t.name, country:t.country, color:t.color, tier:t.tier, car, drivers };
   });
   CALENDAR = CIRCUITS.map((c,i)=>({...c, played:false, result:null, seed:i+7}));
+  state.raceIndex = 0;
+  state.driverStandings = {};
+  state.constructorStandings = {};
   TEAMS.forEach(t=>{
     state.constructorStandings[t.id]=0;
     t.drivers.forEach(d=>state.driverStandings[d.id]=0);
   });
+}
+
+function generateMarketDrivers(count){
+  const arr=[];
+  for(let i=0;i<count;i++){
+    const pace = rndi(45,92);
+    const consistency = rndi(40,90);
+    const wet = rndi(30,90);
+    const aggression = rndi(25,90);
+    const price = clamp(Math.round((pace*0.45+consistency*0.3+wet*0.25)*2.9 + rndi(-12,12)), 55, 260);
+    arr.push({ id: uid(), name: makeDriverName(), pace, consistency, aggression, wet, price });
+  }
+  return arr;
 }
 
 /* ============================= NAV ============================= */
@@ -602,33 +682,162 @@ function showScreen(id){
   window.scrollTo({top:0,behavior:"instant"});
 }
 
-/* ============================= TEAM SELECT ============================= */
+/* ============================= TEAM CREATE ============================= */
 
-function renderTeamSelect(){
-  const grid = document.getElementById("team-grid");
+function renderColorGrid(){
+  const grid = document.getElementById("color-grid");
   grid.innerHTML = "";
-  TEAMS.forEach(t=>{
-    const perf = Math.round((t.car.aero+t.car.engine)/2);
-    const el = document.createElement("button");
-    el.className="team-card";
-    el.style.setProperty("--tc", t.color);
-    el.innerHTML = `
-      <div class="team-name">${t.name}</div>
-      <div class="team-country">${t.country}</div>
-      <div class="driver-mini">${t.drivers[0].name}</div>
-      <div class="driver-mini">${t.drivers[1].name}</div>
-      <div class="team-stats-mini">
-        <span>PERF ${perf}</span>
-        <span>FIAB ${t.car.reliability}</span>
+  TEAM_COLOR_PALETTE.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "color-swatch-btn"+(teamDraft.color===c?" selected":"");
+    b.style.background = c;
+    b.style.setProperty("--sc", c);
+    b.addEventListener("click", ()=>{
+      teamDraft.color = c;
+      renderColorGrid();
+      validateCreateForm();
+    });
+    grid.appendChild(b);
+  });
+}
+
+function validateCreateForm(){
+  const name = document.getElementById("team-name-input").value.trim();
+  teamDraft.name = name;
+  document.getElementById("btn-confirm-create").disabled = !(name.length>0 && teamDraft.color);
+}
+
+function createPlayerTeam(){
+  const team = {
+    id:"team-player",
+    name: teamDraft.name,
+    country:"Ton écurie",
+    color: teamDraft.color,
+    tier: 2,
+    car: { aero:32, engine:32, reliability:48 },
+    drivers: [],
+  };
+  TEAMS.push(team);
+  state.playerTeamId = team.id;
+  state.constructorStandings[team.id] = 0;
+  state.devPoints = START_BUDGET;
+  state.marketDrivers = generateMarketDrivers(12);
+  showScreen("screen-market");
+  renderMarket();
+}
+
+/* ============================= MARKET ============================= */
+
+function renderMarket(){
+  const t = playerTeam();
+  document.getElementById("market-budget").textContent = state.devPoints;
+
+  const signedRow = document.getElementById("signed-row");
+  signedRow.innerHTML = "";
+  for(let i=0;i<2;i++){
+    const d = t.drivers[i];
+    const slot = document.createElement("div");
+    slot.className = "signed-slot"+(d?" filled":"");
+    slot.innerHTML = d
+      ? `<div class="sn">${d.name}</div><div>Rythme ${d.pace} · Régul. ${d.consistency}</div>
+         <button class="btn btn-sm btn-ghost" data-release="${d.id}" style="margin-top:6px;">Renvoyer</button>`
+      : `Emplacement pilote ${i+1} libre`;
+    signedRow.appendChild(slot);
+  }
+  signedRow.querySelectorAll("[data-release]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      releaseDriver(btn.getAttribute("data-release"));
+    });
+  });
+
+  const listEl = document.getElementById("market-drivers");
+  const full = t.drivers.length>=2;
+  listEl.innerHTML = state.marketDrivers.map(d=>`
+    <div class="market-driver">
+      <div class="info">
+        <div class="nm">${d.name}</div>
+        <div class="st">Rythme ${d.pace} · Régul. ${d.consistency} · Pluie ${d.wet} · Agressivité ${d.aggression}</div>
+      </div>
+      <div class="price">${d.price} €dev</div>
+      <button class="btn btn-sm" data-buy="${d.id}" ${(full||state.devPoints<d.price)?"disabled":""}>Recruter</button>
+    </div>
+  `).join("");
+  listEl.querySelectorAll("[data-buy]").forEach(btn=>{
+    btn.addEventListener("click", ()=>buyDriver(btn.getAttribute("data-buy")));
+  });
+
+  renderPartsShop("market-parts", renderMarket);
+
+  document.getElementById("btn-start-season").disabled = t.drivers.length<2;
+}
+
+function buyDriver(driverId){
+  const t = playerTeam();
+  if(t.drivers.length>=2) return;
+  const idx = state.marketDrivers.findIndex(d=>d.id===driverId);
+  if(idx===-1) return;
+  const d = state.marketDrivers[idx];
+  if(state.devPoints < d.price) return;
+  state.devPoints -= d.price;
+  state.marketDrivers.splice(idx,1);
+  t.drivers.push({ id:d.id, name:d.name, pace:d.pace, consistency:d.consistency, aggression:d.aggression, wet:d.wet });
+  state.driverStandings[d.id] = 0;
+  renderMarket();
+}
+
+function releaseDriver(driverId){
+  const t = playerTeam();
+  const idx = t.drivers.findIndex(d=>d.id===driverId);
+  if(idx===-1) return;
+  const d = t.drivers[idx];
+  t.drivers.splice(idx,1);
+  delete state.driverStandings[d.id];
+  const refund = Math.round((clamp(Math.round((d.pace*0.45+d.consistency*0.3+d.wet*0.25)*2.9),55,260))*0.7);
+  state.devPoints += refund;
+  state.marketDrivers.push({ id:d.id, name:d.name, pace:d.pace, consistency:d.consistency, aggression:d.aggression, wet:d.wet,
+    price: clamp(Math.round((d.pace*0.45+d.consistency*0.3+d.wet*0.25)*2.9),55,260) });
+  renderMarket();
+}
+
+/* ============================= SHARED CAR SHOP ============================= */
+
+const DEV_CONF = {
+  aero:{label:"Aérodynamique", key:"aero"},
+  engine:{label:"Moteur", key:"engine"},
+  reliability:{label:"Fiabilité", key:"reliability"},
+};
+
+function devCost(currentVal){ return Math.round(6 + (currentVal-40)/6); }
+
+function renderPartsShop(containerId, onChange){
+  const t = playerTeam();
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML="";
+  Object.values(DEV_CONF).forEach(conf=>{
+    const val = t.car[conf.key];
+    const cost = devCost(val);
+    const div = document.createElement("div");
+    div.className="garage-stat";
+    div.innerHTML = `
+      <div class="garage-stat-head"><span class="lbl">${conf.label}</span><span class="val">${val} / 100</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${val}%"></div></div>
+      <div class="row between" style="margin-top:6px;">
+        <span class="garage-cost">Amélioration +3 pour ${Math.max(cost,1)} €dev</span>
+        <button class="btn btn-sm" data-dev="${conf.key}" ${(val>=99||state.devPoints<Math.max(cost,1))?"disabled":""}>Développer</button>
       </div>
     `;
-    el.addEventListener("click", ()=>{
-      selectedTeamId = t.id;
-      document.querySelectorAll(".team-card").forEach(c=>c.classList.remove("selected"));
-      el.classList.add("selected");
-      document.getElementById("btn-confirm-team").disabled=false;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll("[data-dev]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const key = btn.getAttribute("data-dev");
+      const cost = Math.max(devCost(t.car[key]),1);
+      if(state.devPoints>=cost){
+        state.devPoints -= cost;
+        t.car[key] = clamp(t.car[key]+3,0,100);
+        if(onChange) onChange();
+      }
     });
-    grid.appendChild(el);
   });
 }
 
@@ -642,7 +851,7 @@ function renderHub(){
   document.getElementById("hub-badge").style.background = t.color;
   document.getElementById("hub-badge").textContent = t.name.split(" ").map(w=>w[0]).slice(0,2).join("");
   document.getElementById("hub-team-name").textContent = t.name;
-  document.getElementById("hub-team-sub").textContent = t.country+" · "+t.drivers.map(d=>d.name.split(" ")[1]).join(" / ");
+  document.getElementById("hub-team-sub").textContent = t.drivers.map(d=>d.name.split(" ")[1]||d.name).join(" / ");
   document.getElementById("hub-dev-points").textContent = state.devPoints;
   document.documentElement.style.setProperty("--tc", t.color);
 
@@ -707,46 +916,9 @@ function renderStandings(){
     </tr>`).join("");
 }
 
-const DEV_CONF = {
-  aero:{label:"Aérodynamique", key:"aero"},
-  engine:{label:"Moteur", key:"engine"},
-  reliability:{label:"Fiabilité", key:"reliability"},
-};
-
-function devCost(currentVal){ return Math.round(6 + (currentVal-40)/6); }
-
 function renderGarage(){
+  renderPartsShop("garage-stats", renderGarage);
   const t = playerTeam();
-  const wrap = document.getElementById("garage-stats");
-  wrap.innerHTML="";
-  Object.values(DEV_CONF).forEach(conf=>{
-    const val = t.car[conf.key];
-    const cost = devCost(val);
-    const div = document.createElement("div");
-    div.className="garage-stat";
-    div.innerHTML = `
-      <div class="garage-stat-head"><span class="lbl">${conf.label}</span><span class="val">${val} / 100</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${val}%"></div></div>
-      <div class="row between" style="margin-top:6px;">
-        <span class="garage-cost">Amélioration +3 pour ${cost} pts</span>
-        <button class="btn btn-sm" data-dev="${conf.key}" ${(val>=99||state.devPoints<cost)?"disabled":""}>Développer</button>
-      </div>
-    `;
-    wrap.appendChild(div);
-  });
-  wrap.querySelectorAll("[data-dev]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const key = btn.getAttribute("data-dev");
-      const cost = devCost(t.car[key]);
-      if(state.devPoints>=cost){
-        state.devPoints -= cost;
-        t.car[key] = clamp(t.car[key]+3,0,100);
-        renderHub();
-        switchTab("garage");
-      }
-    });
-  });
-
   const dWrap = document.getElementById("garage-drivers");
   dWrap.innerHTML="";
   t.drivers.forEach(d=>{
@@ -761,6 +933,7 @@ function renderGarage(){
     `;
     dWrap.appendChild(card);
   });
+  document.getElementById("hub-dev-points").textContent = state.devPoints;
 }
 
 function switchTab(name){
@@ -774,7 +947,6 @@ function switchTab(name){
 function startRaceWeekend(){
   const circuit = CALENDAR[state.raceIndex];
   const points = generateTrackPoints(circuit.seed);
-  const path = null; // built lazily once canvas context known (Path2D needs no ctx actually)
   raceState = {
     circuit,
     trackData: { points, path: buildTrackPath(points) },
@@ -831,7 +1003,7 @@ function runQuali(){
   const runners = entries.map(e=>({
     entry:e,
     phase: rnd(0,1),
-    speed: bestTime/e.time, // relative pace, 1 = fastest
+    speed: bestTime/e.time,
     color: e.team.color,
     isPlayer: e.team.id===state.playerTeamId,
   }));
@@ -887,7 +1059,6 @@ function finishQuali(entries){
   `).join("");
   document.getElementById("quali-continue-wrap").classList.remove("hidden");
 
-  // static grid preview on the track
   const cars = entries.map(e=>({
     progress: -0.02*entries.indexOf(e),
     color:e.team.color, isPlayer:e.team.id===state.playerTeamId, dnf:false,
@@ -923,10 +1094,10 @@ function renderWeatherBanner(){
   const b = document.getElementById("weather-banner");
   if(raceState.weather==="rain"){
     b.className="weather-banner rain";
-    b.innerHTML = `<span class="wicon">🌧</span> Pluie sur la piste — intensité ${Math.round(raceState.weatherIntensity*100)}%. Les pneus slicks perdent nettement en adhérence.`;
+    b.innerHTML = `<span class="wicon">🌧</span> Pluie — intensité ${Math.round(raceState.weatherIntensity*100)}%. Les slicks perdent en adhérence.`;
   } else {
     b.className="weather-banner";
-    b.innerHTML = `<span class="wicon">☀</span> Piste sèche. Risque de pluie ce week-end : ${Math.round(raceState.circuit.rainChance*100)}%.`;
+    b.innerHTML = `<span class="wicon">☀</span> Piste sèche. Risque de pluie : ${Math.round(raceState.circuit.rainChance*100)}%.`;
   }
 }
 
@@ -1064,8 +1235,7 @@ function aiDecide(rd){
   }
   const roll = Math.random();
   if(rd.tireWear>72){ rd.instruction="eco"; }
-  else if(roll<0.28){ rd.instruction="attaque"; }
-  else if(roll<0.5){ rd.instruction="defends"; }
+  else if(roll<0.35){ rd.instruction="attaque"; }
   else { rd.instruction="rythme"; }
 }
 
@@ -1115,8 +1285,7 @@ function simulateLap(){
     }
 
     const consistencyNoise = rnd(-1,1)*(100-driver.consistency)/45;
-    const defendsVariance = rd.instruction==="defends" ? 0.4 : 1;
-    const lapTime = BASE_LAP - perf*0.3 + weatherPenalty + consistencyNoise*defendsVariance + rnd(-0.3,0.3);
+    const lapTime = BASE_LAP - perf*0.3 + weatherPenalty + consistencyNoise + rnd(-0.3,0.3);
     lapTimesThisLap.push(lapTime);
 
     rd.cumTime += Math.max(lapTime, 40) + pitLoss;
@@ -1160,11 +1329,9 @@ function raceLoopAdvance(nLaps){
   const fromMap = {};
   Object.keys(raceState.drivers).forEach(id=>{ fromMap[id]=raceState.drivers[id].vProgress; });
 
-  let lapsRun = 0;
   for(let i=0;i<nLaps;i++){
     if(raceState.lap>=raceState.totalLaps) break;
     simulateLap();
-    lapsRun++;
   }
   document.getElementById("lap-current").textContent = raceState.lap;
   renderWeatherBanner();
@@ -1232,20 +1399,30 @@ function showResults(finalOrder, earned){
 
   const t = playerTeam();
   document.getElementById("results-note").textContent =
-    `${t.name} repart avec ${earned} points de développement à investir au garage. Direction le prochain rendez-vous du calendrier.`;
+    `${t.name} repart avec ${earned} €dev à investir au garage. Direction le prochain rendez-vous du calendrier.`;
 }
 
 /* ============================= EVENTS ============================= */
 
 document.getElementById("btn-start").addEventListener("click", ()=>{
   initTeams();
-  renderTeamSelect();
-  showScreen("screen-team-select");
+  teamDraft = { name:"", color:null };
+  document.getElementById("team-name-input").value="";
+  renderColorGrid();
+  document.getElementById("btn-confirm-create").disabled=true;
+  showScreen("screen-team-create");
 });
 
-document.getElementById("btn-confirm-team").addEventListener("click", ()=>{
-  if(!selectedTeamId) return;
-  state.playerTeamId = selectedTeamId;
+document.getElementById("team-name-input").addEventListener("input", validateCreateForm);
+
+document.getElementById("btn-confirm-create").addEventListener("click", ()=>{
+  if(!teamDraft.name || !teamDraft.color) return;
+  createPlayerTeam();
+});
+
+document.getElementById("btn-start-season").addEventListener("click", ()=>{
+  const t = playerTeam();
+  if(t.drivers.length<2) return;
   renderHub();
   showScreen("screen-hub");
 });
