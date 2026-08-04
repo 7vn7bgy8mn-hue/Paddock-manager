@@ -439,8 +439,8 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
       <div class="bb-circuit" id="bb-circuit"></div>
       <div class="weather-banner" id="weather-banner"></div>
       <div class="bb-speed">
-        <button class="bb-btn" id="btn-lap-1">▶ Tour</button>
-        <button class="bb-btn bb-btn-accent" id="btn-lap-5">▶▶ x5</button>
+        <button class="bb-btn bb-btn-accent" id="btn-play-pause">▶ Lecture</button>
+        <button class="bb-btn" id="btn-speed">x1</button>
       </div>
       <div class="lap-counter">Tour <b id="lap-current">0</b>/<span id="lap-total">0</span></div>
     </div>
@@ -576,37 +576,94 @@ function buildTrackPath(points){
   return path;
 }
 
-function drawTrack(ctx, points, path){
+function drawTrack(ctx, points, path, seed){
   ctx.clearRect(0,0,600,340);
-  const g = ctx.createRadialGradient(300,170,40,300,170,340);
-  g.addColorStop(0,"#14161c");
-  g.addColorStop(1,"#0a0b0e");
+
+  /* --- terrain aérien : champs --- */
+  const g = ctx.createLinearGradient(0,0,600,340);
+  g.addColorStop(0,"#2f4127");
+  g.addColorStop(0.5,"#37492e");
+  g.addColorStop(1,"#2a3a23");
   ctx.fillStyle=g;
   ctx.fillRect(0,0,600,340);
 
+  const rand = seededRandom((seed||1)*53+7);
+  for(let i=0;i<9;i++){
+    const fx=rand()*600, fy=rand()*340, fw=55+rand()*95, fh=35+rand()*65;
+    ctx.fillStyle=`rgba(${34+rand()*26},${52+rand()*34},${26+rand()*18},0.4)`;
+    ctx.fillRect(fx,fy,fw,fh);
+  }
+  for(let i=0;i<26;i++){
+    const tx=rand()*600, ty=rand()*340;
+    ctx.fillStyle="rgba(18,34,15,0.55)";
+    ctx.beginPath();
+    ctx.arc(tx,ty,2+rand()*2.4,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  /* vignette pour recentrer l'œil sur la piste */
+  const vg = ctx.createRadialGradient(300,170,50,300,170,360);
+  vg.addColorStop(0,"rgba(10,11,14,0)");
+  vg.addColorStop(1,"rgba(10,11,14,0.5)");
+  ctx.fillStyle=vg;
+  ctx.fillRect(0,0,600,340);
+
   ctx.lineJoin="round"; ctx.lineCap="round";
+
+  /* zone de gravier */
+  ctx.strokeStyle="#c9b285";
+  ctx.globalAlpha=0.5;
+  ctx.lineWidth=34;
+  ctx.stroke(path);
+  ctx.globalAlpha=1;
+
+  /* liseré d'herbe */
+  ctx.strokeStyle="#3c5a2e";
+  ctx.lineWidth=27;
+  ctx.stroke(path);
+
+  /* halo vibrant (accent) sous l'asphalte */
   ctx.strokeStyle="#e0322c";
-  ctx.lineWidth=30;
+  ctx.lineWidth=25;
   ctx.setLineDash([10,10]);
-  ctx.globalAlpha=0.18;
+  ctx.globalAlpha=0.2;
   ctx.stroke(path);
   ctx.setLineDash([]);
   ctx.globalAlpha=1;
 
-  ctx.strokeStyle="#33353f";
-  ctx.lineWidth=24;
+  /* asphalte */
+  ctx.strokeStyle="#34363f";
+  ctx.lineWidth=19;
   ctx.stroke(path);
-
   ctx.strokeStyle="#26272f";
-  ctx.lineWidth=18;
+  ctx.lineWidth=14;
   ctx.stroke(path);
 
-  ctx.strokeStyle="rgba(255,255,255,0.18)";
-  ctx.lineWidth=1.4;
+  /* ligne centrale */
+  ctx.strokeStyle="rgba(255,255,255,0.2)";
+  ctx.lineWidth=1.3;
   ctx.setLineDash([7,9]);
   ctx.stroke(path);
   ctx.setLineDash([]);
 
+  /* tribunes le long du circuit */
+  [0.22,0.5,0.78].forEach(t=>{
+    const gp = trackPointAt(t, points);
+    const gtan = tangentAt(t, points);
+    const gang = Math.atan2(gtan.y,gtan.x)+Math.PI/2;
+    ctx.save();
+    ctx.translate(gp.x,gp.y);
+    ctx.rotate(gang);
+    ctx.translate(0,23);
+    ctx.fillStyle="rgba(18,20,26,0.85)";
+    roundRectPath(ctx,-22,-6,44,12,2);
+    ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.09)";
+    for(let i=-18;i<18;i+=6){ ctx.fillRect(i,-4,3,8); }
+    ctx.restore();
+  });
+
+  /* ligne de départ / stands */
   const p0 = trackPointAt(0, points);
   const tan = tangentAt(0, points);
   ctx.save();
@@ -617,29 +674,71 @@ function drawTrack(ctx, points, path){
     ctx.fillStyle = i%2===0? "#e9eaef":"#14161c";
     ctx.fillRect(-2, i*h - h*3, 4, h);
   }
+  ctx.fillStyle="rgba(18,20,26,0.9)";
+  roundRectPath(ctx,-38,25,76,15,2);
+  ctx.fill();
+  ctx.strokeStyle="rgba(255,255,255,0.14)";
+  ctx.lineWidth=1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function roundRectPath(ctx,x,y,width,height,radius){
+  ctx.beginPath();
+  ctx.moveTo(x+radius,y);
+  ctx.arcTo(x+width,y,x+width,y+height,radius);
+  ctx.arcTo(x+width,y+height,x,y+height,radius);
+  ctx.arcTo(x,y+height,x,y,radius);
+  ctx.arcTo(x,y,x+width,y,radius);
+  ctx.closePath();
+}
+
+function drawCarShape(ctx, x, y, angle, color, isPlayer, dnf){
+  const w = isPlayer ? 15 : 12.5;
+  const h = isPlayer ? 7.5 : 6.5;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+  ctx.globalAlpha = dnf ? 0.4 : 1;
+
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  roundRectPath(ctx, -w/2+0.6, -h/2+0.6, w, h, h/2.4);
+  ctx.fill();
+
+  ctx.fillStyle = dnf ? "#3a3c44" : color;
+  roundRectPath(ctx, -w/2, -h/2, w, h, h/2.4);
+  ctx.fill();
+  if(isPlayer){
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle="#ffffff";
+    ctx.stroke();
+  }
+
+  ctx.fillStyle="rgba(0,0,0,0.55)";
+  ctx.fillRect(-w/2-1.2,-h/2-0.5,2,h+1);
+  ctx.fillRect(w/2-0.8,-h/2-0.5,2,h+1);
+
+  ctx.fillStyle="rgba(255,255,255,0.4)";
+  ctx.beginPath();
+  ctx.ellipse(-w*0.05,0,w*0.24,h*0.3,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.globalAlpha=1;
   ctx.restore();
 }
 
 function drawCars(ctx, points, cars){
   cars.forEach(c=>{
     const pt = trackPointAt(c.progress, points);
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, c.isPlayer?7:5, 0, Math.PI*2);
-    ctx.fillStyle = c.dnf ? "#3a3c44" : c.color;
-    ctx.globalAlpha = c.dnf ? 0.45 : 1;
-    ctx.fill();
-    if(c.isPlayer){
-      ctx.lineWidth=2;
-      ctx.strokeStyle="#ffffff";
-      ctx.stroke();
-    }
-    ctx.globalAlpha=1;
+    const tan = tangentAt(c.progress, points);
+    const angle = Math.atan2(tan.y, tan.x);
+    drawCarShape(ctx, pt.x, pt.y, angle, c.color, c.isPlayer, c.dnf);
   });
 }
 
 function renderTrackFrame(canvas, trackData, cars){
   const ctx = canvas.getContext("2d");
-  drawTrack(ctx, trackData.points, trackData.path);
+  drawTrack(ctx, trackData.points, trackData.path, trackData.seed);
   drawCars(ctx, trackData.points, cars);
 }
 
@@ -989,7 +1088,7 @@ function startRaceWeekend(){
   const points = generateTrackPoints(circuit.seed);
   raceState = {
     circuit,
-    trackData: { points, path: buildTrackPath(points) },
+    trackData: { points, path: buildTrackPath(points), seed: circuit.seed },
     weather:"dry",
     weatherIntensity:0,
     avgLapTime: 80,
@@ -999,6 +1098,8 @@ function startRaceWeekend(){
     drivers:{},
     log:[],
     finished:false,
+    playing:false,
+    speed:1,
   };
   showScreen("screen-quali");
   document.getElementById("quali-eyebrow").textContent = `Manche ${state.raceIndex+1} / ${CALENDAR.length} — Qualifications`;
@@ -1120,6 +1221,10 @@ function startRaceScreen(){
   document.getElementById("lap-total").textContent = raceState.totalLaps;
   document.getElementById("lap-current").textContent = 0;
   document.getElementById("race-session-tag").textContent = "Tour de formation";
+  raceState.playing = false;
+  raceState.speed = 1;
+  updatePlayPauseButton();
+  updateSpeedButton();
   pushLog("Radio stand — feux éteints, c'est parti !");
   renderWeatherBanner();
   renderRaceCanvas();
@@ -1377,46 +1482,86 @@ function simulateLap(){
   }
 }
 
-function setControlsEnabled(enabled){
-  document.getElementById("btn-lap-1").disabled = !enabled;
-  document.getElementById("btn-lap-5").disabled = !enabled;
+function updatePlayPauseButton(){
+  const btn = document.getElementById("btn-play-pause");
+  if(!btn) return;
+  if(raceState.lap>=raceState.totalLaps){
+    btn.textContent = "🏁 Terminé";
+    btn.disabled = true;
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = raceState.playing ? "⏸ Pause" : "▶ Lecture";
 }
 
-function raceLoopAdvance(nLaps){
+function updateSpeedButton(){
+  const btn = document.getElementById("btn-speed");
+  if(!btn) return;
+  btn.textContent = "x"+raceState.speed;
+  btn.classList.toggle("bb-btn-accent", raceState.speed===2);
+}
+
+function toggleSpeed(){
+  raceState.speed = raceState.speed===1 ? 2 : 1;
+  updateSpeedButton();
+}
+
+function togglePlayPause(){
   if(raceState.lap>=raceState.totalLaps) return;
-  setControlsEnabled(false);
-  document.getElementById("race-session-tag").textContent = nLaps>1 ? "Simulation accélérée" : "Tour en cours";
+  raceState.playing = !raceState.playing;
+  updatePlayPauseButton();
+  if(raceState.playing){
+    document.getElementById("race-session-tag").textContent = "En course";
+    autoPlayStep();
+  } else {
+    document.getElementById("race-session-tag").textContent = "En pause";
+  }
+}
+
+function autoPlayStep(){
+  if(!raceState.playing) return;
+  if(raceState.lap>=raceState.totalLaps){
+    raceState.playing = false;
+    updatePlayPauseButton();
+    return;
+  }
+  raceLoopAdvance(()=>{
+    if(raceState.playing) autoPlayStep();
+  });
+}
+
+function raceLoopAdvance(onComplete){
+  if(raceState.lap>=raceState.totalLaps){ if(onComplete) onComplete(); return; }
 
   const fromMap = {};
   Object.keys(raceState.drivers).forEach(id=>{ fromMap[id]=raceState.drivers[id].vProgress; });
 
-  for(let i=0;i<nLaps;i++){
-    if(raceState.lap>=raceState.totalLaps) break;
-    simulateLap();
-  }
+  simulateLap();
+
   document.getElementById("lap-current").textContent = raceState.lap;
   renderWeatherBanner();
 
   const toMap = {};
   Object.keys(raceState.drivers).forEach(id=>{ toMap[id]=computeVisualTarget(id); });
 
-  const duration = nLaps>1 ? 1500 : 900;
+  const baseDuration = 900;
+  const duration = baseDuration / (raceState.speed||1);
   tween(fromMap, toMap, duration, (cur)=>{
     Object.keys(cur).forEach(id=>{ raceState.drivers[id].vProgress = cur[id]; });
     renderRaceCanvas();
   }, ()=>{
-    document.getElementById("race-session-tag").textContent = "En course";
     renderLeaderboard();
     renderDriverControls();
-    setControlsEnabled(true);
     if(raceState.lap>=raceState.totalLaps){
       finishRace();
     }
+    if(onComplete) onComplete();
   });
 }
 
 function finishRace(){
-  setControlsEnabled(false);
+  raceState.playing = false;
+  updatePlayPauseButton();
   const order = orderedDriverIds();
   const finishers = order.filter(id=>!raceState.drivers[id].dnf);
   const dnfs = order.filter(id=>raceState.drivers[id].dnf);
@@ -1498,8 +1643,8 @@ document.querySelectorAll(".tab").forEach(tab=>{
 
 document.getElementById("btn-run-quali").addEventListener("click", runQuali);
 document.getElementById("btn-goto-race").addEventListener("click", startRaceScreen);
-document.getElementById("btn-lap-1").addEventListener("click", ()=>raceLoopAdvance(1));
-document.getElementById("btn-lap-5").addEventListener("click", ()=>raceLoopAdvance(5));
+document.getElementById("btn-play-pause").addEventListener("click", togglePlayPause);
+document.getElementById("btn-speed").addEventListener("click", toggleSpeed);
 document.getElementById("btn-back-hub").addEventListener("click", ()=>{
   state.raceIndex++;
   renderHub();
