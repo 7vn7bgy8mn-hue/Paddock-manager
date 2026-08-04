@@ -229,6 +229,42 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
   background:var(--bg-raised);border:1px solid var(--line-soft);border-radius:8px;padding:8px 10px;margin-bottom:16px;display:flex;flex-direction:column-reverse;gap:3px;}
 .race-actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 25%);padding:14px 0 4px;display:flex;gap:8px;}
 
+/* ---------- race screen: grille / piste / fiches pilotes / barre basse ---------- */
+.race-frame{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;}
+.race-col-label{font-family:var(--font-m);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-faint);margin-bottom:6px;}
+.race-col-grid .leaderboard{margin-bottom:0;}
+.lb-row{grid-template-columns:20px 4px 1fr auto auto;padding:6px 8px;}
+.radio-ticker{font-family:var(--font-m);font-size:11px;color:var(--text-dim);background:var(--bg-card);border:1px solid var(--line-soft);
+  border-radius:7px;padding:7px 12px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.race-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:10px;}
+.rc-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.rc-badge{width:30px;height:30px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-d);font-weight:700;font-size:12px;color:#0a0a0a;}
+.rc-name{font-family:var(--font-d);font-weight:700;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-pos{font-family:var(--font-m);font-size:11px;color:var(--text-dim);}
+.rc-instr{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;}
+.rc-gauges{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+.rc-ring{width:50px;height:50px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;position:relative;}
+.rc-ring-inner{position:absolute;inset:5px;border-radius:50%;background:var(--bg-card);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-m);font-size:11px;color:var(--text);}
+.rc-gauge-label{font-family:var(--font-m);font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;}
+.rc-gauge-col{flex:1;}
+.rc-gauge-col .val{font-family:var(--font-m);font-size:13px;color:var(--text);margin-top:2px;}
+.rc-pit-btn{width:100%;background:var(--amber);border-color:var(--amber);color:#1a1400;font-family:var(--font-d);font-weight:700;
+  border-radius:7px;padding:9px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;border:none;}
+.rc-pit-menu{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+
+.race-bottom-bar{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:8px 12px;margin-top:10px;flex:none;flex-wrap:wrap;}
+.bb-circuit{font-family:var(--font-d);font-weight:700;font-size:13px;flex:1;min-width:120px;}
+.bb-speed{display:flex;gap:6px;}
+.bb-btn{border-radius:7px;border:1px solid var(--line);background:var(--bg-raised);color:var(--text);font-family:var(--font-d);
+  font-weight:700;font-size:12px;padding:8px 12px;text-transform:uppercase;letter-spacing:.03em;}
+.bb-btn-accent{background:var(--accent);border-color:var(--accent);color:#fff;}
+.race-bottom-bar .weather-banner{margin-bottom:0;padding:6px 10px;font-size:11px;flex:1;min-width:160px;}
+.race-bottom-bar .lap-counter{white-space:nowrap;}
+
 .split-layout{display:flex;flex-direction:column;gap:16px;}
 .split-main{min-width:0;}
 .split-side{min-width:0;}
@@ -241,6 +277,12 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
   .split-side{flex:1 1 42%;height:100%;overflow-y:auto;padding-right:2px;}
   .track-wrap{margin-bottom:10px;}
   .race-actions{position:static;background:none;padding:4px 0 0;}
+  .race-frame{flex-direction:row;align-items:stretch;gap:14px;}
+  .race-col-grid{flex:0 0 200px;overflow-y:auto;height:100%;}
+  .race-col-center{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;height:100%;}
+  .race-col-center .track-wrap{flex:1;min-height:0;margin-bottom:0;}
+  .race-col-center .track-wrap canvas{height:100%;object-fit:contain;}
+  .race-col-cards{flex:0 0 230px;overflow-y:auto;height:100%;padding-right:2px;}
 }
 
 /* ---------- results ---------- */
@@ -379,32 +421,28 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 
   <!-- RACE -->
   <div id="screen-race" class="screen hidden">
-    <div class="split-layout">
-      <div class="split-side">
-        <div class="row between" style="margin-bottom:10px;">
-          <div class="eyebrow" id="race-eyebrow" style="margin-bottom:0;">Course</div>
-          <div class="lap-counter">Tour <b id="lap-current">0</b> / <span id="lap-total">0</span></div>
-        </div>
-        <div class="weather-banner" id="weather-banner"></div>
-        <h2 class="section-title" style="font-size:15px;">Classement en direct</h2>
+    <div class="race-frame">
+      <div class="race-col-grid">
+        <div class="race-col-label">Grille</div>
         <div class="leaderboard" id="leaderboard"></div>
-        <h2 class="section-title" style="font-size:15px;">Radio stand</h2>
-        <div class="race-log" id="race-log"></div>
       </div>
-      <div class="split-main">
+      <div class="race-col-center">
+        <div class="radio-ticker" id="radio-ticker">Radio stand — silence sur les ondes.</div>
         <div class="track-wrap">
           <span class="track-session-tag" id="race-session-tag">En course</span>
           <canvas id="race-canvas" width="600" height="340"></canvas>
         </div>
-
-        <h2 class="section-title" style="font-size:15px;">Consignes écurie</h2>
-        <div id="driver-controls"></div>
-
-        <div class="race-actions">
-          <button class="btn" id="btn-lap-1" style="flex:1;">Tour suivant</button>
-          <button class="btn" id="btn-lap-5" style="flex:1;">+5 tours</button>
-        </div>
       </div>
+      <div class="race-col-cards" id="driver-controls"></div>
+    </div>
+    <div class="race-bottom-bar">
+      <div class="bb-circuit" id="bb-circuit"></div>
+      <div class="weather-banner" id="weather-banner"></div>
+      <div class="bb-speed">
+        <button class="bb-btn" id="btn-lap-1">▶ Tour</button>
+        <button class="bb-btn bb-btn-accent" id="btn-lap-5">▶▶ x5</button>
+      </div>
+      <div class="lap-counter">Tour <b id="lap-current">0</b>/<span id="lap-total">0</span></div>
     </div>
   </div>
 
@@ -1072,20 +1110,17 @@ function finishQuali(entries){
 
 function pushLog(msg){
   raceState.log.push(msg);
-  const el = document.getElementById("race-log");
-  const div = document.createElement("div");
-  div.textContent = msg;
-  el.prepend(div);
+  const el = document.getElementById("radio-ticker");
+  if(el) el.textContent = msg;
 }
 
 function startRaceScreen(){
   showScreen("screen-race");
-  document.getElementById("race-eyebrow").textContent = raceState.circuit.name+" · "+raceState.totalLaps+" tours";
+  document.getElementById("bb-circuit").textContent = raceState.circuit.name+" — "+raceState.circuit.country;
   document.getElementById("lap-total").textContent = raceState.totalLaps;
   document.getElementById("lap-current").textContent = 0;
   document.getElementById("race-session-tag").textContent = "Tour de formation";
-  document.getElementById("race-log").innerHTML="";
-  pushLog("Formation de la grille. Feux éteints, c'est parti !");
+  pushLog("Radio stand — feux éteints, c'est parti !");
   renderWeatherBanner();
   renderRaceCanvas();
   renderLeaderboard();
@@ -1159,24 +1194,40 @@ function renderLeaderboard(){
   }).join("");
 }
 
+let openPitFor = null;
+
 function renderDriverControls(){
   const t = playerTeam();
   const wrap = document.getElementById("driver-controls");
   wrap.innerHTML="";
   t.drivers.forEach(d=>{
     const rd = raceState.drivers[d.id];
+    const remain = clamp(100-Math.round(rd.tireWear),0,100);
+    const ringColor = remain>55?"var(--green)":(remain>25?"var(--amber)":"var(--accent)");
     const div = document.createElement("div");
-    div.className="driver-control";
+    div.className="race-card";
     div.innerHTML = `
-      <div class="driver-control-head">
-        <span class="nm">${d.name}</span>
-        <span class="pill">P${rd.position||"-"} · Usure ${Math.round(rd.tireWear)}%</span>
+      <div class="rc-top">
+        <div class="rc-badge" style="background:${t.color}">${d.name.split(" ").map(w=>w[0]).slice(0,2).join("")}</div>
+        <div class="rc-name">${d.name}</div>
+        <div class="rc-pos">P${rd.position||"-"}</div>
       </div>
-      <div class="instr-grid">
+      <div class="rc-instr">
         ${Object.keys(INSTR).map(k=>`<button class="instr-btn ${rd.instruction===k?'active':''}" data-driver="${d.id}" data-instr="${k}">${INSTR[k].label}</button>`).join("")}
       </div>
-      <div class="pit-row">
-        <span class="pill">Stand :</span>
+      <div class="rc-gauges">
+        <div class="rc-ring" style="background:conic-gradient(${ringColor} ${remain*3.6}deg, var(--bg-raised) 0deg)">
+          <div class="rc-ring-inner">${remain}%</div>
+        </div>
+        <div class="rc-gauge-col">
+          <div class="rc-gauge-label">Pneu</div>
+          <div class="val">${TIRES[rd.tire].label}</div>
+          <div class="rc-gauge-label" style="margin-top:6px;">Fiabilité</div>
+          <div class="val">${t.car.reliability}%</div>
+        </div>
+      </div>
+      <button class="rc-pit-btn" data-toggle-pit="${d.id}">${rd.pitQueuedTire?"Stand : "+TIRES[rd.pitQueuedTire].label+" prévu":"Pit Stop"}</button>
+      <div class="rc-pit-menu ${openPitFor===d.id?'':'hidden'}">
         ${Object.keys(TIRES).map(k=>`<button class="tire-btn ${rd.pitQueuedTire===k?'queued':''}" data-driver="${d.id}" data-tire="${k}">${TIRES[k].label}</button>`).join("")}
         ${rd.pitQueuedTire?`<button class="btn btn-sm btn-ghost" data-driver="${d.id}" data-cancel-pit="1">Annuler</button>`:""}
       </div>
@@ -1191,10 +1242,18 @@ function renderDriverControls(){
       renderDriverControls();
     });
   });
+  wrap.querySelectorAll("[data-toggle-pit]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id = btn.getAttribute("data-toggle-pit");
+      openPitFor = openPitFor===id ? null : id;
+      renderDriverControls();
+    });
+  });
   wrap.querySelectorAll("[data-tire]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       const id = btn.getAttribute("data-driver");
       raceState.drivers[id].pitQueuedTire = btn.getAttribute("data-tire");
+      openPitFor = null;
       renderDriverControls();
     });
   });
