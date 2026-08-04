@@ -198,6 +198,20 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
   background:var(--bg-raised);border:1px solid var(--line-soft);border-radius:8px;padding:8px 10px;margin-bottom:16px;display:flex;flex-direction:column-reverse;gap:3px;}
 .race-actions{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 25%);padding:14px 0 4px;display:flex;gap:8px;}
 
+.split-layout{display:flex;flex-direction:column;gap:16px;}
+.split-main{min-width:0;}
+.split-side{min-width:0;}
+
+/* Landscape: piste à gauche en grand, infos/consignes à droite dans une colonne qui défile */
+@media (orientation:landscape) and (min-width:560px){
+  #app{max-width:none;padding:14px 20px 24px;}
+  .split-layout{flex-direction:row;align-items:flex-start;gap:20px;}
+  .split-main{flex:1 1 58%;position:sticky;top:14px;}
+  .split-side{flex:1 1 42%;max-height:calc(100vh - 28px);overflow-y:auto;padding-right:2px;}
+  .track-wrap{margin-bottom:12px;}
+  .race-actions{position:static;background:none;padding:4px 0 0;}
+}
+
 /* ---------- results ---------- */
 .podium-line{display:flex;align-items:baseline;gap:10px;padding:12px 14px;border-radius:8px;background:var(--bg-card);border:1px solid var(--line-soft);margin-bottom:6px;}
 .podium-num{font-family:var(--font-d);font-weight:700;font-size:20px;color:var(--text-faint);width:26px;}
@@ -271,45 +285,57 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 
   <!-- QUALI -->
   <div id="screen-quali" class="screen hidden">
-    <div class="eyebrow" id="quali-eyebrow">Qualifications</div>
-    <h1 class="title" id="quali-title" style="margin-bottom:12px;"></h1>
+    <div class="split-layout">
+      <div class="split-main">
+        <div class="eyebrow" id="quali-eyebrow">Qualifications</div>
+        <h1 class="title" id="quali-title" style="margin-bottom:12px;"></h1>
 
-    <div class="track-wrap">
-      <span class="track-session-tag" id="quali-session-tag">Piste froide</span>
-      <canvas id="quali-canvas" width="600" height="340"></canvas>
-    </div>
+        <div class="track-wrap">
+          <span class="track-session-tag" id="quali-session-tag">Piste froide</span>
+          <canvas id="quali-canvas" width="600" height="340"></canvas>
+        </div>
 
-    <button class="btn btn-accent" id="btn-run-quali" style="width:100%;">Lancer les qualifications</button>
-    <div class="grid-list" id="quali-results" style="margin-top:18px;"></div>
-    <div class="race-actions hidden" id="quali-continue-wrap">
-      <button class="btn btn-accent" id="btn-goto-race" style="width:100%;">Aller sur la grille de départ</button>
+        <button class="btn btn-accent" id="btn-run-quali" style="width:100%;">Lancer les qualifications</button>
+        <div class="race-actions hidden" id="quali-continue-wrap">
+          <button class="btn btn-accent" id="btn-goto-race" style="width:100%;">Aller sur la grille de départ</button>
+        </div>
+      </div>
+      <div class="split-side">
+        <h2 class="section-title" style="font-size:15px;">Grille</h2>
+        <div class="grid-list" id="quali-results"></div>
+      </div>
     </div>
   </div>
 
   <!-- RACE -->
   <div id="screen-race" class="screen hidden">
-    <div class="row between" style="margin-bottom:10px;">
-      <div class="eyebrow" id="race-eyebrow" style="margin-bottom:0;">Course</div>
-      <div class="lap-counter">Tour <b id="lap-current">0</b> / <span id="lap-total">0</span></div>
-    </div>
-    <div class="weather-banner" id="weather-banner"></div>
+    <div class="split-layout">
+      <div class="split-main">
+        <div class="row between" style="margin-bottom:10px;">
+          <div class="eyebrow" id="race-eyebrow" style="margin-bottom:0;">Course</div>
+          <div class="lap-counter">Tour <b id="lap-current">0</b> / <span id="lap-total">0</span></div>
+        </div>
+        <div class="weather-banner" id="weather-banner"></div>
 
-    <div class="track-wrap">
-      <span class="track-session-tag" id="race-session-tag">En course</span>
-      <canvas id="race-canvas" width="600" height="340"></canvas>
-    </div>
+        <div class="track-wrap">
+          <span class="track-session-tag" id="race-session-tag">En course</span>
+          <canvas id="race-canvas" width="600" height="340"></canvas>
+        </div>
 
-    <div class="leaderboard" id="leaderboard"></div>
+        <div class="race-actions">
+          <button class="btn" id="btn-lap-1" style="flex:1;">Tour suivant</button>
+          <button class="btn" id="btn-lap-5" style="flex:1;">+5 tours</button>
+        </div>
+      </div>
+      <div class="split-side">
+        <div class="leaderboard" id="leaderboard"></div>
 
-    <h2 class="section-title" style="font-size:15px;">Consignes écurie</h2>
-    <div id="driver-controls"></div>
+        <h2 class="section-title" style="font-size:15px;">Consignes écurie</h2>
+        <div id="driver-controls"></div>
 
-    <h2 class="section-title" style="font-size:15px;">Radio stand</h2>
-    <div class="race-log" id="race-log"></div>
-
-    <div class="race-actions">
-      <button class="btn" id="btn-lap-1" style="flex:1;">Tour suivant</button>
-      <button class="btn" id="btn-lap-5" style="flex:1;">+5 tours</button>
+        <h2 class="section-title" style="font-size:15px;">Radio stand</h2>
+        <div class="race-log" id="race-log"></div>
+      </div>
     </div>
   </div>
 
