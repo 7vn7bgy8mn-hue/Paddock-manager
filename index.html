@@ -165,10 +165,10 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
 .lap-counter{font-family:var(--font-m);font-size:13px;color:var(--text-dim);}
 .lap-counter b{color:var(--text);font-size:16px;}
 
-.track-ribbon{position:relative;height:34px;border-radius:100px;background:var(--bg-raised);border:1px solid var(--line);margin-bottom:16px;overflow:hidden;}
-.track-ribbon::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg, transparent 0 18px, rgba(255,255,255,.035) 18px 20px);}
-.track-dot{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);border:1.5px solid rgba(0,0,0,.4);}
-.track-dot.me{width:12px;height:12px;box-shadow:0 0 0 2px #fff;z-index:2;}
+.track-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#0a0b0e;margin-bottom:16px;position:relative;}
+.track-wrap canvas{width:100%;height:auto;display:block;}
+.track-session-tag{position:absolute;top:10px;left:12px;font-family:var(--font-m);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-faint);background:rgba(10,11,14,.7);padding:3px 8px;border-radius:5px;border:1px solid var(--line);}
 
 .leaderboard{display:flex;flex-direction:column;gap:4px;margin-bottom:18px;}
 .lb-row{display:grid;grid-template-columns:24px 5px 1fr auto auto;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;background:var(--bg-card);border:1px solid var(--line-soft);}
@@ -213,7 +213,7 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
     <div class="logo-mark">PADDOCK</div>
     <div class="logo-sub">Gestion d'écurie · Saison fictive</div>
     <div class="menu-strip"></div>
-    <p class="menu-copy">Choisis une écurie, développe ta voiture entre les manches, et pilote la stratégie de tes deux pilotes course après course — qualifications, arrêts aux stands et météo changeante inclus.</p>
+    <p class="menu-copy">Choisis une écurie, développe ta voiture entre les manches, et pilote la stratégie de tes deux pilotes course après course sur des circuits dessinés en direct — qualifications, arrêts aux stands et météo changeante inclus.</p>
     <button class="btn btn-accent" id="btn-start">Nouvelle saison</button>
   </div>
 
@@ -272,9 +272,14 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
   <!-- QUALI -->
   <div id="screen-quali" class="screen hidden">
     <div class="eyebrow" id="quali-eyebrow">Qualifications</div>
-    <h1 class="title" id="quali-title" style="margin-bottom:4px;"></h1>
-    <p class="menu-copy" style="text-align:left;margin-bottom:16px;">Une seule tentative chronométrée par pilote. La position sur la grille dépend de la performance de la voiture, du pilote... et d'un peu de chance.</p>
-    <button class="btn btn-accent" id="btn-run-quali">Lancer les qualifications</button>
+    <h1 class="title" id="quali-title" style="margin-bottom:12px;"></h1>
+
+    <div class="track-wrap">
+      <span class="track-session-tag" id="quali-session-tag">Piste froide</span>
+      <canvas id="quali-canvas" width="600" height="340"></canvas>
+    </div>
+
+    <button class="btn btn-accent" id="btn-run-quali" style="width:100%;">Lancer les qualifications</button>
     <div class="grid-list" id="quali-results" style="margin-top:18px;"></div>
     <div class="race-actions hidden" id="quali-continue-wrap">
       <button class="btn btn-accent" id="btn-goto-race" style="width:100%;">Aller sur la grille de départ</button>
@@ -288,7 +293,11 @@ table.std td.pts{font-family:var(--font-m);text-align:right;color:var(--amber);}
       <div class="lap-counter">Tour <b id="lap-current">0</b> / <span id="lap-total">0</span></div>
     </div>
     <div class="weather-banner" id="weather-banner"></div>
-    <div class="track-ribbon" id="track-ribbon"></div>
+
+    <div class="track-wrap">
+      <span class="track-session-tag" id="race-session-tag">En course</span>
+      <canvas id="race-canvas" width="600" height="340"></canvas>
+    </div>
 
     <div class="leaderboard" id="leaderboard"></div>
 
@@ -332,15 +341,15 @@ function makeDriverName(){return pick(FIRST_NAMES)+" "+pick(LAST_NAMES);}
 
 const TEAM_TEMPLATES = [
   {name:"Scuderia Rossina",   country:"Italie",     color:"#e0322c", tier:1},
-  {name:"Toro d'Acciaio",     country:"Autriche",   color:"#1a3fae", tier:1},
+  {name:"Toro d'Acciaio",     country:"Autriche",   color:"#2f5fe0", tier:1},
   {name:"Silberpfeil Racing", country:"Allemagne",  color:"#c7cbd1", tier:1},
   {name:"Papaya Dynamics",    country:"Angleterre", color:"#ff8000", tier:1},
   {name:"Bleuet Sport",       country:"France",     color:"#2452c9", tier:2},
   {name:"Alpine Croix",       country:"Suisse",     color:"#e8ecf1", tier:2},
   {name:"Verde Economy",      country:"Angleterre", color:"#2fae5c", tier:2},
   {name:"Liberty Stripe",     country:"États-Unis", color:"#123a8f", tier:3},
-  {name:"Sirocco Marine",     country:"Thaïlande",  color:"#0f2a52", tier:2},
-  {name:"Ardoise Independent",country:"Irlande",    color:"#7a7d85", tier:3},
+  {name:"Sirocco Marine",     country:"Thaïlande",  color:"#37b7c9", tier:2},
+  {name:"Ardoise Independent",country:"Irlande",    color:"#9a9da5", tier:3},
 ];
 
 const CIRCUITS = [
@@ -369,6 +378,157 @@ const TIRES = {
 const POINTS_TABLE = [25,18,15,12,10,8,6,4,2,1];
 const BASE_LAP = 100;
 
+/* ============================= TRACK GEOMETRY ============================= */
+
+function seededRandom(seed){
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return function(){ s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+function generateTrackPoints(seed){
+  const rand = seededRandom(seed*97+13);
+  const n = 9 + Math.floor(rand()*4); // 9..12 anchor points
+  const cx=300, cy=170, rx=250, ry=138;
+  const pts=[];
+  for(let i=0;i<n;i++){
+    const angle = (i/n)*Math.PI*2 + rand()*0.22;
+    const rMod = 0.62 + rand()*0.55;
+    pts.push({ x: cx+Math.cos(angle)*rx*rMod, y: cy+Math.sin(angle)*ry*rMod });
+  }
+  return pts;
+}
+
+function midpoint(a,b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
+function quadAt(p0,p1,p2,u){
+  const x = (1-u)*(1-u)*p0.x + 2*(1-u)*u*p1.x + u*u*p2.x;
+  const y = (1-u)*(1-u)*p0.y + 2*(1-u)*u*p1.y + u*u*p2.y;
+  return {x,y};
+}
+function trackPointAt(t, points){
+  const n = points.length;
+  const tt = ((t%1)+1)%1;
+  const seg = tt*n;
+  const i = Math.floor(seg);
+  const u = seg-i;
+  const prev = points[(i-1+n)%n];
+  const cur = points[i%n];
+  const next = points[(i+1)%n];
+  const start = midpoint(prev,cur);
+  const end = midpoint(cur,next);
+  return quadAt(start,cur,end,u);
+}
+function tangentAt(t, points){
+  const p1 = trackPointAt(t-0.004, points);
+  const p2 = trackPointAt(t+0.004, points);
+  const dx=p2.x-p1.x, dy=p2.y-p1.y;
+  const len = Math.hypot(dx,dy)||1;
+  return {x:dx/len, y:dy/len};
+}
+function buildTrackPath(points){
+  const n=points.length;
+  const path = new Path2D();
+  const first = midpoint(points[n-1],points[0]);
+  path.moveTo(first.x,first.y);
+  for(let i=0;i<n;i++){
+    const cur=points[i];
+    const next=points[(i+1)%n];
+    const end=midpoint(cur,next);
+    path.quadraticCurveTo(cur.x,cur.y,end.x,end.y);
+  }
+  path.closePath();
+  return path;
+}
+
+function drawTrack(ctx, points, path){
+  ctx.clearRect(0,0,600,340);
+  // background
+  const g = ctx.createRadialGradient(300,170,40,300,170,340);
+  g.addColorStop(0,"#14161c");
+  g.addColorStop(1,"#0a0b0e");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,600,340);
+
+  // road curb (outer)
+  ctx.lineJoin="round"; ctx.lineCap="round";
+  ctx.strokeStyle="#e0322c";
+  ctx.lineWidth=30;
+  ctx.setLineDash([10,10]);
+  ctx.globalAlpha=0.18;
+  ctx.stroke(path);
+  ctx.setLineDash([]);
+  ctx.globalAlpha=1;
+
+  // road surface
+  ctx.strokeStyle="#33353f";
+  ctx.lineWidth=24;
+  ctx.stroke(path);
+
+  // inner shading
+  ctx.strokeStyle="#26272f";
+  ctx.lineWidth=18;
+  ctx.stroke(path);
+
+  // centerline
+  ctx.strokeStyle="rgba(255,255,255,0.18)";
+  ctx.lineWidth=1.4;
+  ctx.setLineDash([7,9]);
+  ctx.stroke(path);
+  ctx.setLineDash([]);
+
+  // start / finish line
+  const p0 = trackPointAt(0, points);
+  const tan = tangentAt(0, points);
+  const perp = {x:-tan.y, y:tan.x};
+  ctx.save();
+  ctx.translate(p0.x,p0.y);
+  ctx.rotate(Math.atan2(tan.y,tan.x));
+  const w=22,h=6;
+  for(let i=-3;i<3;i++){
+    ctx.fillStyle = i%2===0? "#e9eaef":"#14161c";
+    ctx.fillRect(-2, i*h - h*3, 4, h);
+  }
+  ctx.restore();
+}
+
+function drawCars(ctx, points, cars){
+  cars.forEach(c=>{
+    const pt = trackPointAt(c.progress, points);
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, c.isPlayer?7:5, 0, Math.PI*2);
+    ctx.fillStyle = c.dnf ? "#3a3c44" : c.color;
+    ctx.globalAlpha = c.dnf ? 0.45 : 1;
+    ctx.fill();
+    if(c.isPlayer){
+      ctx.lineWidth=2;
+      ctx.strokeStyle="#ffffff";
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  });
+}
+
+function renderTrackFrame(canvas, trackData, cars){
+  const ctx = canvas.getContext("2d");
+  drawTrack(ctx, trackData.points, trackData.path);
+  drawCars(ctx, trackData.points, cars);
+}
+
+function tween(fromMap, toMap, duration, onFrame, onDone){
+  const start = (window.performance&&performance.now)?performance.now():Date.now();
+  function step(){
+    const now = (window.performance&&performance.now)?performance.now():Date.now();
+    const elapsed = now-start;
+    const p = Math.min(1, duration<=0?1:elapsed/duration);
+    const eased = 1-Math.pow(1-p,3);
+    const cur = {};
+    for(const k in toMap){ cur[k] = fromMap[k] + (toMap[k]-fromMap[k])*eased; }
+    onFrame(cur,p);
+    if(p<1){ requestAnimationFrame(step); } else if(onDone){ onDone(); }
+  }
+  requestAnimationFrame(step);
+}
+
 /* ============================= STATE ============================= */
 
 let TEAMS = [];
@@ -377,8 +537,8 @@ let state = {
   playerTeamId:null,
   raceIndex:0,
   devPoints:60,
-  driverStandings:{},   // driverId -> points
-  constructorStandings:{}, // teamId -> points
+  driverStandings:{},
+  constructorStandings:{},
 };
 let raceState = null;
 let selectedTeamId = null;
@@ -392,19 +552,16 @@ function initTeams(){
       reliability: clamp(70+ (t.tier===1?-4:6) +rndi(-5,5),40,96),
     };
     const drivers = [0,1].map(()=>({
-      id:crypto.randomUUID?crypto.randomUUID():(""+Math.random()),
+      id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : ("d"+Math.random().toString(36).slice(2)),
       name:makeDriverName(),
       pace: clamp(55+tierBonus+rndi(-6,8),35,96),
       consistency: clamp(60+rndi(-10,15),35,95),
       aggression: rndi(30,90),
       wet: clamp(50+rndi(-15,25),20,95),
     }));
-    return {
-      id:"team-"+i, name:t.name, country:t.country, color:t.color, tier:t.tier,
-      car, drivers,
-    };
+    return { id:"team-"+i, name:t.name, country:t.country, color:t.color, tier:t.tier, car, drivers };
   });
-  CALENDAR = CIRCUITS.map(c=>({...c, played:false, result:null}));
+  CALENDAR = CIRCUITS.map((c,i)=>({...c, played:false, result:null, seed:i+7}));
   TEAMS.forEach(t=>{
     state.constructorStandings[t.id]=0;
     t.drivers.forEach(d=>state.driverStandings[d.id]=0);
@@ -461,7 +618,6 @@ function renderHub(){
   document.getElementById("hub-team-name").textContent = t.name;
   document.getElementById("hub-team-sub").textContent = t.country+" · "+t.drivers.map(d=>d.name.split(" ")[1]).join(" / ");
   document.getElementById("hub-dev-points").textContent = state.devPoints;
-
   document.documentElement.style.setProperty("--tc", t.color);
 
   const nextRaceCard = document.getElementById("next-race-card");
@@ -531,9 +687,7 @@ const DEV_CONF = {
   reliability:{label:"Fiabilité", key:"reliability"},
 };
 
-function devCost(currentVal){
-  return Math.round(6 + (currentVal-40)/6);
-}
+function devCost(currentVal){ return Math.round(6 + (currentVal-40)/6); }
 
 function renderGarage(){
   const t = playerTeam();
@@ -593,14 +747,18 @@ function switchTab(name){
 
 function startRaceWeekend(){
   const circuit = CALENDAR[state.raceIndex];
+  const points = generateTrackPoints(circuit.seed);
+  const path = null; // built lazily once canvas context known (Path2D needs no ctx actually)
   raceState = {
     circuit,
+    trackData: { points, path: buildTrackPath(points) },
     weather:"dry",
     weatherIntensity:0,
+    avgLapTime: 80,
     lap:0,
     totalLaps:circuit.laps,
     grid:[],
-    drivers:{}, // driverId -> race data
+    drivers:{},
     log:[],
     finished:false,
   };
@@ -609,7 +767,14 @@ function startRaceWeekend(){
   document.getElementById("quali-title").textContent = circuit.name;
   document.getElementById("quali-results").innerHTML="";
   document.getElementById("quali-continue-wrap").classList.add("hidden");
+  document.getElementById("quali-session-tag").textContent = "Piste froide";
   document.getElementById("btn-run-quali").disabled=false;
+
+  const canvas = document.getElementById("quali-canvas");
+  const idleCars = allDriversFlat().map(({driver,team})=>({
+    progress: 0, color: team.color, isPlayer: team.id===state.playerTeamId, dnf:false,
+  }));
+  renderTrackFrame(canvas, raceState.trackData, idleCars);
 }
 
 function allDriversFlat(){
@@ -618,36 +783,67 @@ function allDriversFlat(){
   return arr;
 }
 
-function perfScore(team, driver, wetSkillWeighted){
+function perfScore(team, driver){
   const carPerf = (team.car.aero*0.5+team.car.engine*0.5);
-  let p = carPerf*0.55 + driver.pace*0.45;
-  return p;
+  return carPerf*0.55 + driver.pace*0.45;
 }
 
 function runQuali(){
-  const c = raceState.circuit;
+  const btn = document.getElementById("btn-run-quali");
+  btn.disabled = true;
+  document.getElementById("quali-session-tag").textContent = "Session en cours";
+
   const entries = allDriversFlat().map(({driver,team})=>{
     const perf = perfScore(team,driver);
     const consistencyNoise = rnd(-1,1) * (100-driver.consistency)/40;
     const time = BASE_LAP - perf*0.34 + consistencyNoise + rnd(-0.5,0.5);
     return {driver,team,time};
   });
+  const bestTime = Math.min(...entries.map(e=>e.time));
+
+  const canvas = document.getElementById("quali-canvas");
+  const runners = entries.map(e=>({
+    entry:e,
+    phase: rnd(0,1),
+    speed: bestTime/e.time, // relative pace, 1 = fastest
+    color: e.team.color,
+    isPlayer: e.team.id===state.playerTeamId,
+  }));
+
+  const duration = 4200;
+  const start = performance.now();
+  function frame(){
+    const now = performance.now();
+    const elapsed = now-start;
+    const p = Math.min(1, elapsed/duration);
+    const cars = runners.map(r=>({
+      progress: r.phase + (elapsed/1000) * r.speed * 0.32,
+      color:r.color, isPlayer:r.isPlayer, dnf:false,
+    }));
+    renderTrackFrame(canvas, raceState.trackData, cars);
+    if(p<1){ requestAnimationFrame(frame); } else { finishQuali(entries); }
+  }
+  requestAnimationFrame(frame);
+}
+
+function finishQuali(entries){
   entries.sort((a,b)=>a.time-b.time);
   raceState.grid = entries;
+  document.getElementById("quali-session-tag").textContent = "Session terminée";
 
   entries.forEach((e,i)=>{
     raceState.drivers[e.driver.id] = {
       teamId:e.team.id,
       driverId:e.driver.id,
       position:i+1,
-      cumTime: i*0.02, // tiny stagger so ties never collide
+      cumTime: i*0.02,
+      vProgress: 0,
       tire:"medium",
       tireWear:0,
       instruction:"rythme",
       pitQueuedTire:null,
       dnf:false,
       pitStops:0,
-      lastGapToLeader:0,
     };
   });
 
@@ -663,8 +859,14 @@ function runQuali(){
       <div class="grid-time">${e.time.toFixed(3)}s</div>
     </div>
   `).join("");
-  document.getElementById("btn-run-quali").disabled=true;
   document.getElementById("quali-continue-wrap").classList.remove("hidden");
+
+  // static grid preview on the track
+  const cars = entries.map(e=>({
+    progress: -0.02*entries.indexOf(e),
+    color:e.team.color, isPlayer:e.team.id===state.playerTeamId, dnf:false,
+  }));
+  renderTrackFrame(document.getElementById("quali-canvas"), raceState.trackData, cars);
 }
 
 /* ============================= RACE SIM ============================= */
@@ -682,9 +884,11 @@ function startRaceScreen(){
   document.getElementById("race-eyebrow").textContent = raceState.circuit.name+" · "+raceState.totalLaps+" tours";
   document.getElementById("lap-total").textContent = raceState.totalLaps;
   document.getElementById("lap-current").textContent = 0;
+  document.getElementById("race-session-tag").textContent = "Tour de formation";
   document.getElementById("race-log").innerHTML="";
   pushLog("Formation de la grille. Feux éteints, c'est parti !");
   renderWeatherBanner();
+  renderRaceCanvas();
   renderLeaderboard();
   renderDriverControls();
 }
@@ -709,12 +913,30 @@ function orderedDriverIds(){
   });
   return ids;
 }
-
 function driverName(id){
   for(const t of TEAMS) for(const d of t.drivers) if(d.id===id) return d.name;
   return "?";
 }
 function teamOf(driverId){return teamById(raceState.drivers[driverId].teamId);}
+
+function computeVisualTarget(id){
+  const rd = raceState.drivers[id];
+  if(rd.dnf) return rd.vProgress;
+  const nonDnf = Object.keys(raceState.drivers).filter(k=>!raceState.drivers[k].dnf);
+  const leaderCum = Math.min(...nonDnf.map(k=>raceState.drivers[k].cumTime));
+  const gap = rd.cumTime - leaderCum;
+  const lapsBehind = gap / (raceState.avgLapTime||80);
+  return raceState.lap - lapsBehind;
+}
+
+function renderRaceCanvas(){
+  const cars = Object.keys(raceState.drivers).map(id=>{
+    const rd = raceState.drivers[id];
+    const team = teamOf(id);
+    return { progress: rd.vProgress, color: team.color, isPlayer: team.id===state.playerTeamId, dnf: rd.dnf };
+  });
+  renderTrackFrame(document.getElementById("race-canvas"), raceState.trackData, cars);
+}
 
 function renderLeaderboard(){
   const ids = orderedDriverIds();
@@ -736,23 +958,6 @@ function renderLeaderboard(){
       <div class="lb-gap">${gap}</div>
     </div>`;
   }).join("");
-
-  const ribbon = document.getElementById("track-ribbon");
-  ribbon.innerHTML="";
-  const maxCum = Math.max(...ids.map(id=>raceState.drivers[id].cumTime));
-  const minCum = Math.min(...ids.map(id=>raceState.drivers[id].cumTime));
-  const span = Math.max(1,maxCum-minCum);
-  ids.forEach(id=>{
-    const rd = raceState.drivers[id];
-    const team = teamOf(id);
-    const pct = 6 + (1 - (rd.cumTime-minCum)/span) * 88;
-    const dot = document.createElement("div");
-    dot.className = "track-dot"+(team.id===state.playerTeamId?" me":"");
-    dot.style.left = pct+"%";
-    dot.style.background = team.color;
-    dot.title = driverName(id);
-    ribbon.appendChild(dot);
-  });
 }
 
 function renderDriverControls(){
@@ -821,8 +1026,7 @@ function updateWeather(){
   }
 }
 
-function aiDecide(rd, driver, team){
-  // pit decision
+function aiDecide(rd){
   if(rd.tireWear>78 && !rd.pitQueuedTire){
     rd.pitQueuedTire = raceState.weather==="rain" ? "wet" : (Math.random()<0.5?"medium":"hard");
   }
@@ -832,7 +1036,6 @@ function aiDecide(rd, driver, team){
   if(raceState.weather==="dry" && rd.tire==="wet" && !rd.pitQueuedTire && rd.tireWear>15){
     rd.pitQueuedTire="medium";
   }
-  // instruction
   const roll = Math.random();
   if(rd.tireWear>72){ rd.instruction="eco"; }
   else if(roll<0.28){ rd.instruction="attaque"; }
@@ -845,6 +1048,8 @@ function simulateLap(){
   updateWeather();
 
   const ids = Object.keys(raceState.drivers);
+  const lapTimesThisLap = [];
+
   ids.forEach(id=>{
     const rd = raceState.drivers[id];
     if(rd.dnf) return;
@@ -852,9 +1057,8 @@ function simulateLap(){
     const driver = team.drivers.find(d=>d.id===id);
     const isPlayer = team.id===state.playerTeamId;
 
-    if(!isPlayer) aiDecide(rd,driver,team);
+    if(!isPlayer) aiDecide(rd);
 
-    // pit stop execution
     let pitLoss = 0;
     if(rd.pitQueuedTire){
       pitLoss = 21 + rnd(-1.5,2.5);
@@ -869,35 +1073,31 @@ function simulateLap(){
     const tireDef = TIRES[rd.tire];
     const carPerf = (team.car.aero*0.5+team.car.engine*0.5);
     let perf = carPerf*0.55 + driver.pace*0.45 + tireDef.grip + instr.pace;
-
-    // tire wear degradation impact on pace
     perf -= rd.tireWear*0.16;
 
-    // weather mismatch penalty
     let weatherPenalty = 0;
     if(raceState.weather==="rain"){
       const rainSeverity = raceState.weatherIntensity;
       if(rd.tire!=="wet"){
         weatherPenalty += 9*rainSeverity + rainSeverity*rd.tireWear*0.05;
       } else {
-        perf += driver.wet*0.08; // wet skill helps on wets in the rain
+        perf += driver.wet*0.08;
         weatherPenalty += 1.5*rainSeverity;
       }
     } else if(rd.tire==="wet"){
-      weatherPenalty += 6; // wet tires in the dry are slow
+      weatherPenalty += 6;
     }
 
     const consistencyNoise = rnd(-1,1)*(100-driver.consistency)/45;
     const defendsVariance = rd.instruction==="defends" ? 0.4 : 1;
-    const lapTime = BASE_LAP - perf*0.3 + weatherPenalty + consistencyNoise*defendsVariance + rnd(-0.3,0.3) + pitLoss;
+    const lapTime = BASE_LAP - perf*0.3 + weatherPenalty + consistencyNoise*defendsVariance + rnd(-0.3,0.3);
+    lapTimesThisLap.push(lapTime);
 
-    rd.cumTime += Math.max(lapTime, 40);
+    rd.cumTime += Math.max(lapTime, 40) + pitLoss;
 
-    // tire wear accumulation
     const wearRate = tireDef.wearBase * instr.wear * raceState.circuit.tireWear * (raceState.weather==="rain"&&rd.tire!=="wet"?1.3:1);
     rd.tireWear = clamp(rd.tireWear + wearRate*rnd(2.2,3.2), 0, 100);
 
-    // reliability / incident risk
     const failRisk = (100-team.car.reliability)*0.00028*instr.risk + (rd.tireWear>92?0.01:0) + (raceState.weather==="rain"&&rd.tire!=="wet"?0.006:0);
     if(Math.random()<failRisk){
       rd.dnf=true;
@@ -906,11 +1106,14 @@ function simulateLap(){
     }
   });
 
-  // update positions
+  if(lapTimesThisLap.length){
+    const avg = lapTimesThisLap.reduce((a,b)=>a+b,0)/lapTimesThisLap.length;
+    raceState.avgLapTime = (raceState.avgLapTime||avg)*0.55 + avg*0.45;
+  }
+
   const order = orderedDriverIds();
   order.forEach((id,i)=>{ raceState.drivers[id].position=i+1; });
 
-  // player-relevant log: position changes / weather already logged
   if(raceState.lap % 5 === 0){
     const t = playerTeam();
     const posText = t.drivers.map(d=>"P"+raceState.drivers[d.id].position).join(" / ");
@@ -918,21 +1121,48 @@ function simulateLap(){
   }
 }
 
+function setControlsEnabled(enabled){
+  document.getElementById("btn-lap-1").disabled = !enabled;
+  document.getElementById("btn-lap-5").disabled = !enabled;
+}
+
 function raceLoopAdvance(nLaps){
+  if(raceState.lap>=raceState.totalLaps) return;
+  setControlsEnabled(false);
+  document.getElementById("race-session-tag").textContent = nLaps>1 ? "Simulation accélérée" : "Tour en cours";
+
+  const fromMap = {};
+  Object.keys(raceState.drivers).forEach(id=>{ fromMap[id]=raceState.drivers[id].vProgress; });
+
+  let lapsRun = 0;
   for(let i=0;i<nLaps;i++){
     if(raceState.lap>=raceState.totalLaps) break;
     simulateLap();
+    lapsRun++;
   }
   document.getElementById("lap-current").textContent = raceState.lap;
   renderWeatherBanner();
-  renderLeaderboard();
-  renderDriverControls();
-  if(raceState.lap>=raceState.totalLaps){
-    finishRace();
-  }
+
+  const toMap = {};
+  Object.keys(raceState.drivers).forEach(id=>{ toMap[id]=computeVisualTarget(id); });
+
+  const duration = nLaps>1 ? 1500 : 900;
+  tween(fromMap, toMap, duration, (cur)=>{
+    Object.keys(cur).forEach(id=>{ raceState.drivers[id].vProgress = cur[id]; });
+    renderRaceCanvas();
+  }, ()=>{
+    document.getElementById("race-session-tag").textContent = "En course";
+    renderLeaderboard();
+    renderDriverControls();
+    setControlsEnabled(true);
+    if(raceState.lap>=raceState.totalLaps){
+      finishRace();
+    }
+  });
 }
 
 function finishRace(){
+  setControlsEnabled(false);
   const order = orderedDriverIds();
   const finishers = order.filter(id=>!raceState.drivers[id].dnf);
   const dnfs = order.filter(id=>raceState.drivers[id].dnf);
@@ -945,7 +1175,6 @@ function finishRace(){
     state.constructorStandings[teamId] = (state.constructorStandings[teamId]||0)+pts;
   });
 
-  // dev points earned by player team based on best finish
   const t = playerTeam();
   const myPositions = t.drivers.map(d=>finalOrder.indexOf(d.id)+1);
   const best = Math.min(...myPositions);
@@ -953,7 +1182,6 @@ function finishRace(){
   state.devPoints += earned;
 
   CALENDAR[state.raceIndex].played = true;
-  const myBestName = t.drivers[myPositions[0]<=myPositions[1]?0:1].name;
   CALENDAR[state.raceIndex].result = `P${myPositions[0]} / P${myPositions[1]}`;
 
   showResults(finalOrder, earned);
